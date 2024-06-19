@@ -6,14 +6,32 @@
 //
 
 import UIKit
+import Alamofire
+import CoreLocation
+import SnapKit
 
 class ViewController: UIViewController {
+    
+    
+    
+    
+    
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
+        view.backgroundColor = .white
+        navigationItem.title = "Weather Now"
+        
+        print("Hi")
+        
+        
+        
     }
 
 
+    
+    
+    
+    
 }
 

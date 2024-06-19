@@ -37,7 +37,7 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .white
+        view.backgroundColor = .bg
         locationManager.delegate = self
         
         checkDeviceLocationAuthorization()
@@ -48,8 +48,7 @@ class ViewController: UIViewController {
         setHierarchy()
         setLayout()
         setUI()
-          
-        
+           
     }
 
     private func setNavBar() {
@@ -99,38 +98,35 @@ class ViewController: UIViewController {
         }
         
         minMaxTempLabel.snp.makeConstraints { make in
-            make.top.equalTo(feelsLikeTempLabel.snp.bottom).offset(10)
+            make.top.equalTo(feelsLikeTempLabel.snp.bottom).offset(5)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
         }
         
         humidityLabel.snp.makeConstraints { make in
-            make.top.equalTo(minMaxTempLabel.snp.bottom).offset(10)
+            make.top.equalTo(minMaxTempLabel.snp.bottom).offset(5)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
         }
-         
-        
+          
     }
     
     private func setUI() {
         locationLabel.text = "나의 위치"
-        locationLabel.font = .boldSystemFont(ofSize: 30)
+        locationLabel.font = .boldSystemFont(ofSize: 35)
         locationLabel.textAlignment = .center
         
-        localityLabel.font = .boldSystemFont(ofSize: 15)
+        localityLabel.font = .boldSystemFont(ofSize: 14)
         localityLabel.textAlignment = .center
         
         weatherImageView.contentMode = .scaleAspectFill
         
-        tempLabel.font = .boldSystemFont(ofSize: 40)
+        tempLabel.font = .boldSystemFont(ofSize: 50)
         
         feelsLikeTempLabel.font = .boldSystemFont(ofSize: 17)
-        
-        
+         
         minMaxTempLabel.font = .boldSystemFont(ofSize: 17)
         
         humidityLabel.font = .boldSystemFont(ofSize: 17)
-        
-        
+         
     }
     
     private func setData(response: WeatherResponse) {
@@ -139,7 +135,6 @@ class ViewController: UIViewController {
             let url = URL(string: WeatherAPI.iconUrl + icon + "@2x.png")
             weatherImageView.kf.setImage(with: url)
         }
-        
         tempLabel.text = "\(weatherMain.temp.oneDigitFormat())°"
         feelsLikeTempLabel.text = "체감온도: \(weatherMain.feels_like.oneDigitFormat())°"
         minMaxTempLabel.text = "최고: \(weatherMain.temp_max.oneDigitFormat())°  최저: \(weatherMain.temp_min.oneDigitFormat())°"
@@ -147,8 +142,6 @@ class ViewController: UIViewController {
     }
     
     @objc private func requestWeather() {
-        print(#function)
-        
         let url = WeatherAPI.url
         let parameters: Parameters = [
             "lat": coordinate.latitude,
@@ -156,6 +149,7 @@ class ViewController: UIViewController {
             "appid": WeatherAPI.key,
             "units": "metric"
         ]
+        
         AF.request(url, parameters: parameters).responseDecodable(of: WeatherResponse.self) { response in
             switch response.result {
             case .success(let value):
@@ -165,7 +159,6 @@ class ViewController: UIViewController {
                 print(error)
             }
         }
-        
     }
     
     func getCurrentCity() {
@@ -179,7 +172,13 @@ class ViewController: UIViewController {
             
             if let locality = placemark.locality, let subLocality = placemark.subLocality {
                 self.currentLocality = locality + " " + subLocality
+                self.locationLabel.text = "나의 위치"
+                self.localityLabel.textColor = .black
                 print(self.currentLocality)
+            } else {
+                self.locationLabel.text = "Globe 날씨"
+                self.currentLocality = "현재 위치 알 수 없음"
+                self.localityLabel.textColor = .lightGray
             }
         }
     }
@@ -209,12 +208,11 @@ extension ViewController {
     }
     
     func locationAuthDeniedAlert() {
-        let alert = UIAlertController(title: "위치 권한", message: "위치 권한이 거절되었습니다.", preferredStyle: .alert)
+        let alert = UIAlertController(title: "위치 권한", message: "위치 권한이 거절되었습니다. 설정에서 위치 권한을 허용해주세요.", preferredStyle: .alert)
         let cancel = UIAlertAction(title: "확인", style: .cancel)
         alert.addAction(cancel)
         present(alert, animated: true)
     }
-    
     
 }
 
@@ -239,6 +237,5 @@ extension ViewController: CLLocationManagerDelegate {
         print(#function)
         checkDeviceLocationAuthorization()
     }
-    
     
 }

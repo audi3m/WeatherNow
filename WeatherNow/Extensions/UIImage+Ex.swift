@@ -10,9 +10,4 @@ import UIKit
 extension UIImage {
     static let location = UIImage(systemName: "location")
     static let weather = UIImage(systemName: "cloud.sun")
-    
-    
-    
-    
-    
 }

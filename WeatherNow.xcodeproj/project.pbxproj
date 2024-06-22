@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D453913C2C240DD300E407C8 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D453913B2C240DD300E407C8 /* WeatherService.swift */; };
 		D4B83E212C22BB8800457CC7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B83E202C22BB8800457CC7 /* AppDelegate.swift */; };
 		D4B83E232C22BB8800457CC7 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B83E222C22BB8800457CC7 /* SceneDelegate.swift */; };
 		D4B83E252C22BB8800457CC7 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4B83E242C22BB8800457CC7 /* ViewController.swift */; };
@@ -24,6 +25,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D453913B2C240DD300E407C8 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherService.swift; sourceTree = "<group>"; };
 		D4B83E1D2C22BB8800457CC7 /* WeatherNow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeatherNow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4B83E202C22BB8800457CC7 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D4B83E222C22BB8800457CC7 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -100,6 +102,7 @@
 			children = (
 				D4B83E452C22E09700457CC7 /* Weather.swift */,
 				D4B83E362C22BDDE00457CC7 /* WeatherAPI.swift */,
+				D453913B2C240DD300E407C8 /* WeatherService.swift */,
 			);
 			path = Weather;
 			sourceTree = "<group>";
@@ -186,6 +189,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D4B83E462C22E09700457CC7 /* Weather.swift in Sources */,
+				D453913C2C240DD300E407C8 /* WeatherService.swift in Sources */,
 				D4B83E442C22D0C700457CC7 /* UIImage+Ex.swift in Sources */,
 				D4B83E3F2C22CEE200457CC7 /* id.swift in Sources */,
 				D4B83E252C22BB8800457CC7 /* ViewController.swift in Sources */,

@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import Alamofire
 import CoreLocation
 import Kingfisher
 import SnapKit
@@ -29,34 +28,33 @@ class ViewController: UIViewController {
         }
     }
     
-    var currentLocality: String = "" {
-        didSet {
-            localityLabel.text = currentLocality
-        }
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .bg
         locationManager.delegate = self
         
         checkDeviceLocationAuthorization()
-        getCurrentCity()
         requestWeather()
         
         setNavBar()
         setHierarchy()
         setLayout()
         setUI()
-           
+        
     }
-
+    
     private func setNavBar() {
         navigationItem.title = "Weather Now"
-        
-        let request = UIBarButtonItem(image: .weather, style: .plain, target: self, action: #selector(requestWeather))
+        let request = UIBarButtonItem(image: .weather, style: .plain, target: self,
+                                      action: #selector(requestWeather))
         request.tintColor = .black
         navigationItem.rightBarButtonItem = request
+    }
+    
+    @objc func requestWeather() {
+        WeatherService.shared.requestWeather(coordinate: coordinate) { response in
+            self.setData(response: response)
+        }
     }
     
     private func setHierarchy() {
@@ -106,7 +104,7 @@ class ViewController: UIViewController {
             make.top.equalTo(minMaxTempLabel.snp.bottom).offset(5)
             make.centerX.equalTo(view.safeAreaLayoutGuide)
         }
-          
+        
     }
     
     private func setUI() {
@@ -120,45 +118,25 @@ class ViewController: UIViewController {
         weatherImageView.contentMode = .scaleAspectFill
         
         tempLabel.font = .boldSystemFont(ofSize: 50)
-        
         feelsLikeTempLabel.font = .boldSystemFont(ofSize: 17)
-         
         minMaxTempLabel.font = .boldSystemFont(ofSize: 17)
-        
         humidityLabel.font = .boldSystemFont(ofSize: 17)
-         
+        
     }
     
     private func setData(response: WeatherResponse) {
         let weatherMain = response.main
+        
         if let icon = response.weather.first?.icon {
             let url = URL(string: WeatherAPI.iconUrl + icon + "@2x.png")
             weatherImageView.kf.setImage(with: url)
         }
+        
         tempLabel.text = "\(weatherMain.temp.oneDigitFormat())°"
         feelsLikeTempLabel.text = "체감온도: \(weatherMain.feels_like.oneDigitFormat())°"
         minMaxTempLabel.text = "최고: \(weatherMain.temp_max.oneDigitFormat())°  최저: \(weatherMain.temp_min.oneDigitFormat())°"
         humidityLabel.text = "습도: \(weatherMain.humidity)%"
-    }
-    
-    @objc private func requestWeather() {
-        let url = WeatherAPI.url
-        let parameters: Parameters = [
-            "lat": coordinate.latitude,
-            "lon": coordinate.longitude,
-            "appid": WeatherAPI.key,
-            "units": "metric"
-        ]
         
-        AF.request(url, parameters: parameters).responseDecodable(of: WeatherResponse.self) { response in
-            switch response.result {
-            case .success(let value):
-                print(value)
-                self.setData(response: value)
-            case .failure(let error):
-                print(error)
-            }
-        }
     }
     
     func getCurrentCity() {
@@ -171,24 +149,27 @@ class ViewController: UIViewController {
             guard let placemark = placemarks?.first else { return }
             
             if let locality = placemark.locality, let subLocality = placemark.subLocality {
-                self.currentLocality = locality + " " + subLocality
                 self.locationLabel.text = "나의 위치"
+                self.localityLabel.text = locality + " " + subLocality
                 self.localityLabel.textColor = .black
-                print(self.currentLocality)
             } else {
                 self.locationLabel.text = "Globe 날씨"
-                self.currentLocality = "현재 위치 알 수 없음"
+                self.localityLabel.text = "현재 위치 알 수 없음"
                 self.localityLabel.textColor = .lightGray
             }
         }
     }
 }
 
-// location auth functions
+// Location auth functions
 extension ViewController {
     func checkDeviceLocationAuthorization() {
-        if CLLocationManager.locationServicesEnabled() {
-            checkCurrentLocationAuthorization()
+        DispatchQueue.global().async {
+            if CLLocationManager.locationServicesEnabled() {
+                DispatchQueue.main.async {
+                    self.checkCurrentLocationAuthorization()
+                }
+            }
         }
     }
     
@@ -198,10 +179,10 @@ extension ViewController {
         case .notDetermined:
             locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
             locationManager.requestWhenInUseAuthorization()
-        case .denied:
-            locationAuthDeniedAlert()
         case .authorizedWhenInUse:
             locationManager.startUpdatingLocation()
+        case .denied:
+            locationAuthDeniedAlert()
         default:
             print(status)
         }
@@ -213,16 +194,12 @@ extension ViewController {
         alert.addAction(cancel)
         present(alert, animated: true)
     }
-    
 }
 
-// location manager delegate
+// Location manager delegate
 extension ViewController: CLLocationManagerDelegate {
-    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        print(#function)
         if let coordinate = locations.last?.coordinate {
-            print(coordinate)
             self.coordinate = coordinate
         }
         
@@ -230,11 +207,10 @@ extension ViewController: CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {
-        print(#function)
+        
     }
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        print(#function)
         checkDeviceLocationAuthorization()
     }
     

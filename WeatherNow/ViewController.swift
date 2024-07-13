@@ -6,13 +6,12 @@
 //
 
 import UIKit
-import CoreLocation
 import Kingfisher
 import SnapKit
 
 class ViewController: UIViewController {
     
-    let locationManager = CLLocationManager()
+    let locationViewModel = LocationViewModel()
     
     let locationLabel = UILabel()
     let localityLabel = UILabel()
@@ -21,39 +20,29 @@ class ViewController: UIViewController {
     let feelsLikeTempLabel = UILabel()
     let minMaxTempLabel = UILabel()
     let humidityLabel = UILabel()
-    
-    var coordinate = CLLocationCoordinate2D() {
-        didSet {
-            getCurrentCity()
-        }
-    }
+    let requestButton = UIButton()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .bg
-        locationManager.delegate = self
-        
-        checkDeviceLocationAuthorization()
-        requestWeather()
-        
-        setNavBar()
         setHierarchy()
         setLayout()
         setUI()
+        bindData()
+    }
+    
+    private func bindData() {
+        locationViewModel.outputAddress.bind { address in
+            self.localityLabel.text = address
+        }
         
-    }
-    
-    private func setNavBar() {
-        navigationItem.title = "Weather Now"
-        let request = UIBarButtonItem(image: .weather, style: .plain, target: self,
-                                      action: #selector(requestWeather))
-        request.tintColor = .black
-        navigationItem.rightBarButtonItem = request
-    }
-    
-    @objc func requestWeather() {
-        WeatherService.shared.requestWeather(coordinate: coordinate) { response in
-            self.setData(response: response)
+        locationViewModel.outputWeather.bind { response in
+            if let response {
+                self.setData(response: response)
+            }
+        }
+        
+        locationViewModel.outputAlert.bind { _ in
+            self.locationAuthDeniedAlert()
         }
     }
     
@@ -65,6 +54,7 @@ class ViewController: UIViewController {
         view.addSubview(feelsLikeTempLabel)
         view.addSubview(minMaxTempLabel)
         view.addSubview(humidityLabel)
+        view.addSubview(requestButton)
     }
     
     private func setLayout() {
@@ -105,9 +95,17 @@ class ViewController: UIViewController {
             make.centerX.equalTo(view.safeAreaLayoutGuide)
         }
         
+        requestButton.snp.makeConstraints { make in
+            make.top.equalTo(locationLabel.snp.bottom).offset(350)
+            make.horizontalEdges.equalTo(view.safeAreaLayoutGuide).inset(30)
+            make.height.equalTo(50)
+        }
+        
     }
     
     private func setUI() {
+        view.backgroundColor = .bg
+        
         locationLabel.text = "나의 위치"
         locationLabel.font = .boldSystemFont(ofSize: 35)
         locationLabel.textAlignment = .center
@@ -122,96 +120,45 @@ class ViewController: UIViewController {
         minMaxTempLabel.font = .boldSystemFont(ofSize: 17)
         humidityLabel.font = .boldSystemFont(ofSize: 17)
         
+        requestButton.setTitle("날씨 불러오기", for: .normal)
+        requestButton.layer.cornerRadius = 10
+        requestButton.backgroundColor = .systemBlue
+        requestButton.addTarget(self, action: #selector(requestWeather), for: .touchUpInside)
+        
+    }
+    
+    @objc private func requestWeather() {
+        resetData()
+        locationViewModel.inputLocationRequest.value = ()
+    }
+    
+    private func resetData() {
+        weatherImageView.image = UIImage()
+        tempLabel.text = ""
+        feelsLikeTempLabel.text = ""
+        minMaxTempLabel.text = ""
+        humidityLabel.text = ""
     }
     
     private func setData(response: WeatherResponse) {
-        let weatherMain = response.main
+        let weather = response.main
         
         if let icon = response.weather.first?.icon {
             let url = URL(string: WeatherAPI.iconUrl + icon + "@2x.png")
             weatherImageView.kf.setImage(with: url)
         }
         
-        tempLabel.text = "\(weatherMain.temp.oneDigitFormat())°"
-        feelsLikeTempLabel.text = "체감온도: \(weatherMain.feels_like.oneDigitFormat())°"
-        minMaxTempLabel.text = "최고: \(weatherMain.temp_max.oneDigitFormat())°  최저: \(weatherMain.temp_min.oneDigitFormat())°"
-        humidityLabel.text = "습도: \(weatherMain.humidity)%"
+        tempLabel.text = "\(weather.온도)°"
+        feelsLikeTempLabel.text = "체감온도: \(weather.체감온도)°"
+        minMaxTempLabel.text = "최고: \(weather.최고온도)°  최저: \(weather.최저온도)°"
+        humidityLabel.text = "습도: \(weather.humidity)%"
         
     }
     
-    func getCurrentCity() {
-        let geocoder = CLGeocoder()
-        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        let locale = Locale(identifier: "Ko-kr")
-        
-        geocoder.reverseGeocodeLocation(location, preferredLocale: locale) { placemarks, error in
-            if let error { print(error) }
-            guard let placemark = placemarks?.first else { return }
-            
-            if let locality = placemark.locality, let subLocality = placemark.subLocality {
-                self.locationLabel.text = "나의 위치"
-                self.localityLabel.text = locality + " " + subLocality
-                self.localityLabel.textColor = .black
-            } else {
-                self.locationLabel.text = "Globe 날씨"
-                self.localityLabel.text = "현재 위치 알 수 없음"
-                self.localityLabel.textColor = .lightGray
-            }
-        }
-    }
-}
-
-// Location auth functions
-extension ViewController {
-    func checkDeviceLocationAuthorization() {
-        DispatchQueue.global().async {
-            if CLLocationManager.locationServicesEnabled() {
-                DispatchQueue.main.async {
-                    self.checkCurrentLocationAuthorization()
-                }
-            }
-        }
-    }
-    
-    func checkCurrentLocationAuthorization() {
-        let status = locationManager.authorizationStatus
-        switch status {
-        case .notDetermined:
-            locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-            locationManager.requestWhenInUseAuthorization()
-        case .authorizedWhenInUse:
-            locationManager.startUpdatingLocation()
-        case .denied:
-            locationAuthDeniedAlert()
-        default:
-            print(status)
-        }
-    }
-    
-    func locationAuthDeniedAlert() {
-        let alert = UIAlertController(title: "위치 권한", message: "위치 권한이 거절되었습니다. 설정에서 위치 권한을 허용해주세요.", preferredStyle: .alert)
+    private func locationAuthDeniedAlert() {
+        let alert = UIAlertController(title: "위치 접근", message: "위치 접근이 거절되었습니다. 설정에서 위치 접근을 허용해주세요.", preferredStyle: .alert)
         let cancel = UIAlertAction(title: "확인", style: .cancel)
         alert.addAction(cancel)
         present(alert, animated: true)
     }
-}
-
-// Location manager delegate
-extension ViewController: CLLocationManagerDelegate {
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let coordinate = locations.last?.coordinate {
-            self.coordinate = coordinate
-        }
-        
-        locationManager.stopUpdatingLocation()
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {
-        
-    }
-    
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        checkDeviceLocationAuthorization()
-    }
-    
 }

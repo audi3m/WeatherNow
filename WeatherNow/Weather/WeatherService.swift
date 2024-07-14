@@ -14,7 +14,7 @@ class WeatherService {
     
     private init() { }
     
-    func requestWeather(coordinate: CLLocationCoordinate2D, completionHandler: @escaping (WeatherResponse) -> Void) {
+    func requestWeather(coordinate: CLLocationCoordinate2D, completionHandler: @escaping (WeatherResponse?, Error?) -> Void) {
         let url = WeatherAPI.url
         let parameters: Parameters = [
             "lat": coordinate.latitude,
@@ -27,9 +27,10 @@ class WeatherService {
             switch response.result {
             case .success(let value):
                 print(value)
-                completionHandler(value)
+                completionHandler(value, nil)
             case .failure(let error):
                 print(error)
+                completionHandler(nil, error)
             }
         }
     }

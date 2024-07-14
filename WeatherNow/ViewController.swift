@@ -31,18 +31,28 @@ class ViewController: UIViewController {
     }
     
     private func bindData() {
-        locationViewModel.outputAddress.bind { address in
-            self.localityLabel.text = address
+        locationViewModel.outputAddress.bind { response in
+            switch response {
+            case .success(let location):
+                self.localityLabel.text = location
+            default:
+                self.localityLabel.text = "위치 정보 불러올 수 없음"
+                self.locationAuthDeniedAlert()
+            }
         }
         
         locationViewModel.outputWeather.bind { response in
             if let response {
-                self.setData(response: response)
+                switch response {
+                case .success(let weather):
+                    self.setData(response: weather)
+                case .fail:
+                    let config = UIImage.SymbolConfiguration(paletteColors: [.systemYellow, .lightGray])
+                    self.weatherImageView.image = UIImage(systemName: "sun.max.trianglebadge.exclamationmark")
+                    self.weatherImageView.preferredSymbolConfiguration = config
+                    self.feelsLikeTempLabel.text = "날씨 정보 불러올 수 없음"
+                }
             }
-        }
-        
-        locationViewModel.outputAlert.bind { _ in
-            self.locationAuthDeniedAlert()
         }
     }
     
@@ -96,8 +106,7 @@ class ViewController: UIViewController {
         }
         
         requestButton.snp.makeConstraints { make in
-            make.top.equalTo(locationLabel.snp.bottom).offset(350)
-            make.horizontalEdges.equalTo(view.safeAreaLayoutGuide).inset(30)
+            make.horizontalEdges.bottom.equalTo(view.safeAreaLayoutGuide).inset(30)
             make.height.equalTo(50)
         }
         
@@ -145,7 +154,7 @@ class ViewController: UIViewController {
         
         if let icon = response.weather.first?.icon {
             let url = URL(string: WeatherAPI.iconUrl + icon + "@2x.png")
-            weatherImageView.kf.setImage(with: url)
+            weatherImage(url: url)
         }
         
         tempLabel.text = "\(weather.온도)°"
@@ -161,4 +170,22 @@ class ViewController: UIViewController {
         alert.addAction(cancel)
         present(alert, animated: true)
     }
+    
+    func weatherImage(url: URL?) {
+        weatherImageView.kf.setImage(
+            with: url,
+            completionHandler: { result in
+                switch result {
+                case .success:
+                    print("success")
+                case .failure:
+                    let config = UIImage.SymbolConfiguration(paletteColors: [.lightGray, .red])
+                    self.weatherImageView.image = UIImage(systemName: "sun.max.trianglebadge.exclamationmark")
+                    self.weatherImageView.preferredSymbolConfiguration = config
+                }
+            }
+        )
+    }
+    
+    
 }

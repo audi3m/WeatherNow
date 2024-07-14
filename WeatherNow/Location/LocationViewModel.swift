@@ -8,15 +8,25 @@
 import Foundation
 import CoreLocation
 
+enum LocationRequest {
+    case success(location: String)
+    case fail
+}
+
+enum WeatherRequest {
+    case success(weather: WeatherResponse)
+    case fail
+}
+
 final class LocationViewModel: NSObject, ObservableObject {
     
     let locationManager = CLLocationManager()
     
     var inputLocationRequest: Observable<Void?> = Observable(nil)
     
-    var outputAddress: Observable<String?> = Observable(nil)
-    var outputWeather: Observable<WeatherResponse?> = Observable(nil)
-    var outputAlert: Observable<Void?> = Observable(nil)
+    var outputLocation: Observable<Void?> = Observable(nil)
+    var outputAddress: Observable<LocationRequest?> = Observable(nil)
+    var outputWeather: Observable<WeatherRequest?> = Observable(nil)
     
     override init() {
         super.init()
@@ -40,16 +50,24 @@ final class LocationViewModel: NSObject, ObservableObject {
             guard let placemark = placemarks?.first else { return }
             
             if let locality = placemark.locality, let subLocality = placemark.subLocality {
-                self.outputAddress.value = "\(locality) \(subLocality)"
+                self.outputAddress.value = .success(location: "\(locality) \(subLocality)")
             } else {
-                self.outputAddress.value = "알 수 없음"
+                self.outputAddress.value = .fail
             }
         }
     }
     
     private func requestWeather(coordinate: CLLocationCoordinate2D) {
-        WeatherService.shared.requestWeather(coordinate: coordinate) { response in
-            self.outputWeather.value = response
+        WeatherService.shared.requestWeather(coordinate: coordinate) { response, error  in
+            guard error == nil else {
+                self.outputWeather.value = .fail
+                return
+            }
+            
+            if let response {
+                self.outputWeather.value = .success(weather: response)
+            }
+            
         }
     }
     
@@ -58,8 +76,12 @@ final class LocationViewModel: NSObject, ObservableObject {
 extension LocationViewModel: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let coordinate = locations.last?.coordinate {
+            outputAddress.value = .success(location: "ㅇㅇ시 ㅇㅇ동")
+            
             getCurrentCity(coordinate: coordinate)
             requestWeather(coordinate: coordinate)
+        } else {
+            outputLocation.value = nil
         }
         locationManager.stopUpdatingLocation()
     }
@@ -90,10 +112,8 @@ extension LocationViewModel: CLLocationManagerDelegate {
             locationManager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.startUpdatingLocation()
-        case .denied:
-            outputAlert.value = ()
         default:
-            print(status)
+            self.outputAddress.value = .fail
         }
     }
     

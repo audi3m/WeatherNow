@@ -31,13 +31,24 @@ class ViewController: UIViewController {
     }
     
     private func bindData() {
+        locationViewModel.outputLocation.bind { response in
+            switch response {
+            case .success:
+                self.locationLabel.text = "나의 위치"
+                print("location O")
+            default:
+                self.locationLabel.text = "위치 알 수 없음"
+                self.locationAuthDeniedAlert()
+                print("location X")
+            }
+        }
+        
         locationViewModel.outputAddress.bind { response in
             switch response {
             case .success(let location):
                 self.localityLabel.text = location
             default:
-                self.localityLabel.text = "위치 정보 불러올 수 없음"
-                self.locationAuthDeniedAlert()
+                self.localityLabel.text = "주소 알 수 없음"
             }
         }
         
@@ -165,7 +176,7 @@ class ViewController: UIViewController {
     }
     
     private func locationAuthDeniedAlert() {
-        let alert = UIAlertController(title: "위치 접근", message: "위치 접근이 거절되었습니다. 설정에서 위치 접근을 허용해주세요.", preferredStyle: .alert)
+        let alert = UIAlertController(title: "위치 접근 불가", message: "위치 접근이 거절되었습니다. 설정에서 위치 접근을 허용해주세요.", preferredStyle: .alert)
         let cancel = UIAlertAction(title: "확인", style: .cancel)
         alert.addAction(cancel)
         present(alert, animated: true)

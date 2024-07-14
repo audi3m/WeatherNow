@@ -9,6 +9,11 @@ import Foundation
 import CoreLocation
 
 enum LocationRequest {
+    case success
+    case fail
+}
+
+enum AddressRequest {
     case success(location: String)
     case fail
 }
@@ -24,8 +29,8 @@ final class LocationViewModel: NSObject, ObservableObject {
     
     var inputLocationRequest: Observable<Void?> = Observable(nil)
     
-    var outputLocation: Observable<Void?> = Observable(nil)
-    var outputAddress: Observable<LocationRequest?> = Observable(nil)
+    var outputLocation: Observable<LocationRequest?> = Observable(nil)
+    var outputAddress: Observable<AddressRequest?> = Observable(nil)
     var outputWeather: Observable<WeatherRequest?> = Observable(nil)
     
     override init() {
@@ -76,12 +81,11 @@ final class LocationViewModel: NSObject, ObservableObject {
 extension LocationViewModel: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let coordinate = locations.last?.coordinate {
-            outputAddress.value = .success(location: "ㅇㅇ시 ㅇㅇ동")
-            
+            outputLocation.value = .success
             getCurrentCity(coordinate: coordinate)
             requestWeather(coordinate: coordinate)
         } else {
-            outputLocation.value = nil
+            outputLocation.value = .fail
         }
         locationManager.stopUpdatingLocation()
     }
@@ -113,7 +117,7 @@ extension LocationViewModel: CLLocationManagerDelegate {
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.startUpdatingLocation()
         default:
-            self.outputAddress.value = .fail
+            outputLocation.value = .fail
         }
     }
     

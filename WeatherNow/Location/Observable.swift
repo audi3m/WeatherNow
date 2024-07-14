@@ -13,7 +13,7 @@ class Observable<T> {
     
     var value: T {
         didSet {
-            print("Value changed")
+            print("Value changed", value)
             closure?(value)
         }
     }
